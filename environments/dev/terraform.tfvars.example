@@ -1,4 +1,9 @@
 # Copy to terraform.tfvars and adjust. terraform.tfvars is git-ignored.
+
+# Which account this environment goes into. Terraform stops if the profile doesn't match.
+aws_profile    = "default"      # profile that logs into the Develop account
+aws_account_id = "123456789012" # <- the DEVELOP account ID
+
 aws_region  = "eu-central-1"
 project     = "training" # must match the project name used in bootstrap
 environment = "dev"
@@ -6,8 +11,8 @@ environment = "dev"
 # Set to false before `terraform destroy` if you want to delete the data too.
 deletion_protection = true
 
-# true = users must set up MFA before they can do anything (best practice).
-enforce_mfa = true
+# Days to keep old versions of files in the app bucket.
+app_version_retention_days = 30
 
 # Which AWS service runs the app and assumes the app role.
 app_service_principals = ["lambda.amazonaws.com"]

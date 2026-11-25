@@ -1,59 +1,86 @@
 # aws-infra — Terraform training project
 
-A small AWS setup built with **Terraform registry modules** (`terraform-aws-modules/*`).
+A small multi-account AWS setup built with **Terraform registry modules**
+(`terraform-aws-modules/*`). Each environment lives in its **own AWS account**, the way
+real companies separate dev from prod.
+
+## Accounts
+
+| AWS account | Terraform folder | CLI profile | What lives there |
+|-------------|------------------|-------------|------------------|
+| Management | `environments/management` | `management` | Billing, the $20/month budget, SSO. **No applications** |
+| Develop | `environments/dev` | `default` | The dev environment |
+| Production | `environments/prod` | `production` | The prod environment |
 
 ## What gets created
 
 | Where | Resource | Purpose |
 |-------|----------|---------|
-| `bootstrap/` | S3 bucket | Stores the Terraform **remote state** |
-| `bootstrap/` | DynamoDB table | **State locking** (stops two `apply`s running at once) |
-| `environments/dev/` | S3 bucket | Storage for the **application** |
-| `environments/dev/` | DynamoDB table | **Application data** |
-| `environments/dev/` | IAM users + groups | `admin` (full access) and `developer` (limited access) |
-| `environments/dev/` | IAM role + policies | Lets the app's compute service talk to the app S3 bucket and table |
+| `bootstrap/` (in every account) | S3 bucket | Stores that account's Terraform **remote state** (S3-native locking) |
+| `environments/management/` | Budget + budget action + IAM role | Org-wide $20/month limit, email alerts, automatic block at 90% |
+| `environments/<env>/` | S3 bucket | Storage for the **application** |
+| `environments/<env>/` | DynamoDB table | **Application data** |
+| `environments/<env>/` | IAM role + policy | Lets the app's compute service talk to the app S3 bucket and table |
+
+`<env>` is `dev` or `prod`. Both use the **same code** with different values in
+`terraform.tfvars`. People don't get IAM users: they sign in through SSO (see
+[docs/iam.md](docs/iam.md)).
 
 ## Folder layout
 
 ```
 aws-infra/
-├── bootstrap/            # Step 1: remote-state backend (uses LOCAL state)
+├── bootstrap/            # Step 1: state bucket, once per account (LOCAL state, one workspace per account)
 ├── environments/
-│   └── dev/              # Step 2: app infrastructure (uses REMOTE state in S3)
+│   ├── management/       # Step 2: budget and org settings  -> Management account
+│   ├── dev/              # Step 3: app infrastructure        -> Develop account
+│   └── prod/             # Step 4: same code, prod values    -> Production account
 └── docs/
     ├── iam.md            # Who can do what
     └── best-practices.md # The practices this repo follows, and why
 ```
 
-## Why two separate stacks?
+## Safety nets
+
+- Every provider has `allowed_account_ids`: if your profile is logged into the wrong
+  account, Terraform stops before it changes anything.
+- Each account has its own state bucket, so a mistake in dev can't touch prod's state.
+- Real account IDs and emails live only in `*.tfvars` and `backend.hcl`, which are git-ignored.
+
+## Why a separate bootstrap stack?
 
 The state bucket must exist **before** Terraform can store state in it, so it
-can't manage itself (a chicken-and-egg problem). `bootstrap/` is applied once with local
-state. Everything else then uses the bucket it created.
+can't manage itself (a chicken-and-egg problem). `bootstrap/` is applied once per account
+with local state. Everything else then uses the bucket it created in its own account.
 
 ## Quick start
 
-Prerequisites: Terraform >= 1.10, AWS CLI configured (`aws sts get-caller-identity` works).
+Prerequisites: Terraform >= 1.10, AWS CLI profiles `default`, `management` and
+`production` working (`aws sts get-caller-identity --profile <name>`).
 
 ```bash
-# 1. Create the state backend
+# 1. State bucket in each account (see bootstrap/README.md)
 cd bootstrap
-cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply
+terraform init
+terraform workspace new develop && terraform apply -var-file=develop.tfvars
+# ...same for management and production
 
-# 2. Create the app infrastructure
-cd ../environments/dev
-cp terraform.tfvars.example terraform.tfvars
-cp backend.hcl.example backend.hcl        # fill in values from step 1 output
+# 2. Management settings (imports the existing budget, creates nothing)
+cd ../environments/management
 terraform init -backend-config=backend.hcl
 terraform plan
-terraform apply
+
+# 3. Dev, then prod once dev works
+cd ../dev
+terraform init -backend-config=backend.hcl
+terraform plan
 ```
 
-Each folder has its own README with more detail.
+Each folder has its own README with the details.
 
 ## Cleaning up
 
-Destroy in **reverse** order: `environments/dev` first, then `bootstrap`.
-Resources are protected from accidental deletion, so read the "Destroy" section in each
-README first.
+Destroy in **reverse** order: `environments/prod` and `environments/dev` first, then
+`bootstrap` in each account. Resources are protected from accidental deletion, so read
+the "Destroy" section in each README first. Don't destroy `environments/management`:
+it removes your spending limit.

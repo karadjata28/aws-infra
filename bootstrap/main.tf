@@ -1,7 +1,9 @@
 # -----------------------------------------------------------------------------
-# Remote state backend: one S3 bucket (state files) + one DynamoDB table (locks).
-# These are shared by every environment; each environment uses its own state
-# "key" (path) inside the bucket, e.g. dev/terraform.tfstate.
+# Remote state backend: one S3 bucket per AWS account.
+#
+# Each account (management, develop, production) gets its OWN bucket, so the state
+# of one account never lives in another. Locking uses S3 itself (`use_lockfile`),
+# so no DynamoDB table is needed.
 # -----------------------------------------------------------------------------
 
 # Looks up the AWS account we're logged into. We add the account ID to the bucket
@@ -10,7 +12,6 @@ data "aws_caller_identity" "current" {}
 
 locals {
   state_bucket_name = "${var.project}-tfstate-${data.aws_caller_identity.current.account_id}"
-  lock_table_name   = "${var.project}-tf-locks"
 }
 
 # --- S3 bucket for Terraform state -------------------------------------------
@@ -56,6 +57,7 @@ module "state_bucket" {
   attach_require_latest_tls_policy      = true
 
   # Delete old state versions after N days so the bucket doesn't grow forever.
+  # The lock files (*.tflock) are tiny and removed by Terraform after each run.
   lifecycle_rule = [
     {
       id      = "expire-old-state-versions"
@@ -68,34 +70,4 @@ module "state_bucket" {
       abort_incomplete_multipart_upload_days = 7
     }
   ]
-}
-
-# --- DynamoDB table for state locking ----------------------------------------
-# While `plan`/`apply` runs, Terraform writes a lock item here. A second run
-# sees the lock and waits/fails instead of corrupting the state.
-# Registry module: https://registry.terraform.io/modules/terraform-aws-modules/dynamodb-table/aws
-module "lock_table" {
-  source  = "terraform-aws-modules/dynamodb-table/aws"
-  version = "~> 5.5"
-
-  name = local.lock_table_name
-
-  # The S3 backend REQUIRES the partition key to be called exactly "LockID" (string).
-  hash_key = "LockID"
-  attributes = [
-    {
-      name = "LockID"
-      type = "S"
-    }
-  ]
-
-  # On-demand billing: you pay per request. Lock traffic is tiny, so it's almost free.
-  billing_mode = "PAY_PER_REQUEST"
-
-  # Stop the table being deleted by mistake (even from the console).
-  deletion_protection_enabled = true
-
-  # Data is always encrypted at rest with an AWS-owned key. We don't need a KMS key
-  # for lock items, so leave the module's KMS option off.
-  server_side_encryption_enabled = false
 }

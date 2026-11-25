@@ -10,24 +10,15 @@ output "state_bucket_arn" {
   value       = module.state_bucket.s3_bucket_arn
 }
 
-output "lock_table_name" {
-  description = "Name of the DynamoDB table used for state locking."
-  value       = module.lock_table.dynamodb_table_id
-}
-
-output "lock_table_arn" {
-  description = "ARN of the lock table."
-  value       = module.lock_table.dynamodb_table_arn
-}
-
 # Ready-to-paste content for environments/<env>/backend.hcl
 # Show it with:  terraform output -raw backend_hcl
 output "backend_hcl" {
-  description = "Copy this into environments/<env>/backend.hcl"
+  description = "Copy this into environments/<env>/backend.hcl for the environment in this account."
   value       = <<-EOT
-    bucket         = "${module.state_bucket.s3_bucket_id}"
-    region         = "${var.aws_region}"
-    dynamodb_table = "${module.lock_table.dynamodb_table_id}"
-    encrypt        = true
+    bucket       = "${module.state_bucket.s3_bucket_id}"
+    region       = "${var.aws_region}"
+    profile      = "${var.aws_profile}"
+    use_lockfile = true
+    encrypt      = true
   EOT
 }

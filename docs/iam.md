@@ -1,56 +1,60 @@
 # IAM — who can do what
 
-## Overview
+There are two kinds of identities, and they live in different places:
+
+| Who | How they get access | Where it's defined |
+|-----|--------------------|--------------------|
+| **People** (you, teammates) | IAM Identity Center (SSO): sign in once, pick an account | Management account, managed by AWS's guided setup |
+| **Applications** (Lambda, EC2, ECS) | An IAM **role** in their own account, with short-lived credentials | `environments/<env>/iam_roles.tf` |
+
+There are **no IAM users** for people in this repo. SSO users get temporary credentials,
+so there are no long-lived passwords or access keys to leak.
+
+## People: SSO
 
 ```
- PEOPLE (IAM users)                        SERVICES (IAM role)
- ──────────────────                        ───────────────────
- training-dev-admin                        Lambda (or EC2/ECS)
-     │ member of                               │ assumes
-     ▼                                         ▼
- training-dev-admins ── AdministratorAccess    training-dev-app ── app-data-readwrite
-                                                                     │
- training-dev-developer                                              ▼
-     │ member of                                          S3 app bucket + DynamoDB table
-     ▼                                                    (read + write)
- training-dev-developers ── app-data-readonly ──► S3 app bucket + DynamoDB table (read only)
+ you ──sign in──► IAM Identity Center (Management account)
+                     │
+                     ├── group 607520121097-AdministratorAccess ──► Develop account
+                     └── group 844153410920-AdministratorAccess ──► Production account
 ```
 
-## Permissions
+AWS's guided multi-account setup created these groups and keeps managing them. It also
+turns off custom permission sets, which is why SSO access isn't written in Terraform here.
+To give someone access, add them to the right group in the IAM Identity Center console.
 
-| Identity | Type | S3 app bucket | DynamoDB app table | Rest of AWS |
-|----------|------|---------------|--------------------|-------------|
-| `admin` | user (via group) | full | full | full |
-| `developer` | user (via group) | list + read | describe + read | none |
-| `app` role | role (for a service) | list, read, write, delete | read, write, delete items | none |
-
-Both groups can also manage their **own** password, access keys and MFA.
-If `enforce_mfa = true`, users can do nothing else until they set up MFA.
-
-## Users vs roles
-
-- **Users** are for people. They have long-term credentials (password and access keys).
-- **Roles** are for services. A role has no stored credentials: the service gets
-  temporary credentials when it assumes the role. Always use a role for applications.
-
-## Getting credentials after `apply`
-
-Terraform deliberately does **not** create passwords or access keys, because they would be
-stored in plain text in the state file. Create them yourself instead:
+For the CLI, log in with your browser instead of using access keys:
 
 ```bash
-# Console password (the user must change it at first sign-in)
-aws iam create-login-profile --user-name training-dev-developer \
-  --password '<temporary-password>' --password-reset-required
-
-# Access key for the CLI (shown only once, so store it safely)
-aws iam create-access-key --user-name training-dev-developer
+aws login --profile production   # opens a sign-in link, saves short-lived credentials
 ```
 
-Then sign in as the user and set up MFA under **Security credentials** in the IAM console.
+> The Develop `default` profile still uses the `terraform` IAM user's access key. It works,
+> but long-lived keys are the main thing SSO removes. Once you're comfortable, switch it
+> to `aws login` as well and delete that key.
 
-## Using the app role
+## Applications: the app role
 
-Point your compute at `app_role_arn` (from `terraform output`). For example, a Lambda
+The examples use **dev** names. Prod creates the same set with `prod` in the name, in the
+Production account.
+
+```
+ Lambda (or EC2/ECS)
+     │ assumes
+     ▼
+ training-dev-app ── app-data-readwrite ──► S3 app bucket + DynamoDB table (read + write)
+```
+
+| Identity | S3 app bucket | DynamoDB app table | Rest of AWS |
+|----------|---------------|--------------------|-------------|
+| `app` role | list, read, write, delete | read, write, delete items | none |
+
+Point your compute at `app_role_arn` (from `terraform output`), for example a Lambda
 function's `role` argument. The function code can then call S3 and DynamoDB with
 no keys in the code.
+
+## Management account
+
+The only IAM resource Terraform manages in Management is `BudgetsSpendLimitActionRole`.
+AWS Budgets assumes it to block new paid resources when spending reaches the limit. It can
+only attach and detach SCPs.

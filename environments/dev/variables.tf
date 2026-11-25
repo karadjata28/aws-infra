@@ -1,3 +1,21 @@
+# --- Account -----------------------------------------------------------------
+# Each environment lives in its own AWS account (dev -> Develop, prod -> Production).
+
+variable "aws_profile" {
+  description = "AWS CLI profile used to log into this environment's account (see ~/.aws/config)."
+  type        = string
+}
+
+variable "aws_account_id" {
+  description = "ID of this environment's AWS account. Terraform stops if the profile is logged into a different account."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be exactly 12 digits."
+  }
+}
+
 # --- General -----------------------------------------------------------------
 
 variable "aws_region" {
@@ -18,9 +36,8 @@ variable "project" {
 }
 
 variable "environment" {
-  description = "Environment name (dev, staging, prod...)."
+  description = "Environment name (dev, staging, prod). No default: it must be set in terraform.tfvars."
   type        = string
-  default     = "dev"
 
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
@@ -40,16 +57,13 @@ variable "deletion_protection" {
   default     = true
 }
 
-# --- IAM ---------------------------------------------------------------------
-
-variable "enforce_mfa" {
-  description = <<-EOT
-    Require MFA for the IAM users. Until a user sets up MFA, they can do almost nothing
-    except set up MFA (best practice). Set to false only for quick CLI experiments.
-  EOT
-  type        = bool
-  default     = true
+variable "app_version_retention_days" {
+  description = "How many days to keep OLD versions of objects in the app bucket (for recovery)."
+  type        = number
+  default     = 30
 }
+
+# --- IAM ---------------------------------------------------------------------
 
 variable "app_service_principals" {
   description = "AWS services allowed to assume the app role (the compute that runs your app)."

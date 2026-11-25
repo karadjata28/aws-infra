@@ -1,0 +1,7 @@
+# Copy to backend.hcl (git-ignored) and fill in the values.
+# Easiest way to get them:  cd ../../bootstrap && terraform workspace select production && terraform output -raw backend_hcl
+bucket       = "training-tfstate-123456789012" # <- the PRODUCTION account ID (its own bucket, not dev's)
+region       = "eu-central-1"
+profile      = "production" # the backend logs in separately from the provider, so it needs the profile too
+use_lockfile = true         # S3-native locking (Terraform >= 1.10), no DynamoDB table needed
+encrypt      = true         # encrypt the state file in S3

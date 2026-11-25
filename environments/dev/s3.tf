@@ -39,7 +39,7 @@ module "app_bucket" {
   attach_deny_insecure_transport_policy = true
   attach_require_latest_tls_policy      = true
 
-  # Clean up: old object versions after 30 days, failed uploads after 7.
+  # Clean up: old object versions after N days, failed uploads after 7.
   lifecycle_rule = [
     {
       id      = "cleanup"
@@ -47,7 +47,7 @@ module "app_bucket" {
       filter  = { prefix = "" }
 
       noncurrent_version_expiration = {
-        noncurrent_days = 30
+        noncurrent_days = var.app_version_retention_days
       }
       abort_incomplete_multipart_upload_days = 7
     }
