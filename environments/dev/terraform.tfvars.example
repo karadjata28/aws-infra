@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is git-ignored.
+aws_region  = "eu-central-1"
+project     = "training" # must match the project name used in bootstrap
+environment = "dev"
+
+# Set to false before `terraform destroy` if you want to delete the data too.
+deletion_protection = true
+
+# true = users must set up MFA before they can do anything (best practice).
+enforce_mfa = true
+
+# Which AWS service runs the app and assumes the app role.
+app_service_principals = ["lambda.amazonaws.com"]

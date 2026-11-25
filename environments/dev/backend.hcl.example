@@ -1,0 +1,9 @@
+# Copy to backend.hcl (git-ignored) and fill in the values.
+# Easiest way to get them:  cd ../../bootstrap && terraform output -raw backend_hcl
+bucket         = "training-tfstate-123456789012" # <- your account ID
+region         = "eu-central-1"
+# State locking with DynamoDB. Terraform warns this is deprecated in favour of
+# `use_lockfile = true` (S3-native locking). It still works. It's used here to learn the
+# classic setup. See docs/best-practices.md.
+dynamodb_table = "training-tf-locks"
+encrypt        = true                # encrypt the state file in S3

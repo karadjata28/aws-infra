@@ -1,5 +1,36 @@
-.terraform/
+# --- Terraform ---------------------------------------------------------------
+# Provider plugins and downloaded modules (re-created by `terraform init`)
+**/.terraform/*
+
+# State files: may contain sensitive data, never commit them.
+# (bootstrap keeps a LOCAL state file - back it up somewhere safe, see bootstrap/README.md)
 *.tfstate
 *.tfstate.*
+
+# Crash logs
 crash.log
+crash.*.log
+
+# Variable files often hold account-specific or secret values.
+# Commit the *.example versions instead.
 *.tfvars
+*.tfvars.json
+!*.tfvars.example
+backend.hcl
+
+# Saved plan files
+*.tfplan
+tfplan
+
+# CLI config
+.terraformrc
+terraform.rc
+
+# Override files (local-only tweaks)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# NOTE: .terraform.lock.hcl is intentionally NOT ignored.
+# Committing it pins exact provider versions for everyone (best practice).

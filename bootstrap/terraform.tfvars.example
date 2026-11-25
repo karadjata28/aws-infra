@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is git-ignored.
+aws_region                   = "eu-central-1"
+project                      = "training"
+state_version_retention_days = 90
