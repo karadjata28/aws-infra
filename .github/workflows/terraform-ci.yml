@@ -1,0 +1,33 @@
+
+name: Terraform CI
+on:
+  pull_request:
+    branches: *
+  push:
+    branches: *
+
+permissions:
+  contents: read
+
+# cancels the run if it is started more than once
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.stack }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack:
+          - terraform/environments/dev
+          - terraform/environments/prod
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 
+
+      - name: Terraform fmt and validate
+        uses: ./gh_actions/terraform-check
+        with:
+          working-directory: ${{ matrix.stack }}

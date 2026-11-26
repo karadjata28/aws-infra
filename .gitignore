@@ -3,7 +3,7 @@
 **/.terraform/*
 
 # State files: may contain sensitive data, never commit them.
-# (bootstrap keeps a LOCAL state file - back it up somewhere safe, see bootstrap/README.md)
+# (bootstrap keeps a LOCAL state file - back it up somewhere safe, see terraform/bootstrap/README.md)
 *.tfstate
 *.tfstate.*
 

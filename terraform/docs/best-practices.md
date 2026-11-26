@@ -43,6 +43,6 @@
 ## Next steps you could add
 
 - `pre-commit` hooks running `terraform fmt`, `tflint` and `checkov`
-- A CI pipeline that runs `plan` on pull requests
+- `terraform plan` on pull requests in CI (fmt and validate already run, see `../../gh_actions/`)
 - Move the dev/prod code into a shared module in `modules/` to remove the copy
 - Switch the Develop `default` profile from an access key to `aws login`

@@ -1,0 +1,23 @@
+
+name: Terraform check
+inputs:
+  working-directory:
+    required: true
+    
+runs:
+  using: composite
+  steps:
+    - name: terraform fmt
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform fmt -check -diff -recursive
+
+    - name: terraform init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init -backend=false -input=false
+
+    - name: terraform validate
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform validate

@@ -1,4 +1,4 @@
-# aws-infra — Terraform training project
+# terraform — AWS infrastructure
 
 A small multi-account AWS setup built with **Terraform registry modules**
 (`terraform-aws-modules/*`). Each environment lives in its **own AWS account**, the way
@@ -29,7 +29,7 @@ real companies separate dev from prod.
 ## Folder layout
 
 ```
-aws-infra/
+terraform/
 ├── bootstrap/            # Step 1: state bucket, once per account (LOCAL state, one workspace per account)
 ├── environments/
 │   ├── management/       # Step 2: budget and org settings  -> Management account
@@ -55,7 +55,8 @@ with local state. Everything else then uses the bucket it created in its own acc
 
 ## Quick start
 
-Prerequisites: Terraform >= 1.10, AWS CLI profiles `default`, `management` and
+Prerequisites: the Terraform version in [`../.terraform-version`](../.terraform-version)
+(`tfenv install` or `tfswitch` picks it up automatically), AWS CLI profiles `default`, `management` and
 `production` working (`aws sts get-caller-identity --profile <name>`).
 
 ```bash
