@@ -1,5 +1,3 @@
-# --- Account -----------------------------------------------------------------
-
 variable "aws_profile" {
   description = "AWS CLI profile that logs into the Management account (see ~/.aws/config)."
   type        = string
@@ -9,6 +7,7 @@ variable "aws_profile" {
 variable "aws_account_id" {
   description = "ID of the Management account. Terraform stops if the profile is logged into a different account."
   type        = string
+  default     = "060502546384"
 
   validation {
     condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
@@ -28,8 +27,6 @@ variable "project" {
   default     = "training"
 }
 
-# --- Spending limit ----------------------------------------------------------
-
 variable "budget_name" {
   description = "Name of the organisation-wide monthly budget."
   type        = string
@@ -43,8 +40,9 @@ variable "monthly_budget_usd" {
 }
 
 variable "alert_emails" {
-  description = "Who gets the budget emails. Keep the real addresses in terraform.tfvars (git-ignored)."
+  description = "Who gets the budget emails."
   type        = list(string)
+  default     = ["alexander@seofocus.bg", "alexanderkaradjov2@gmail.com"]
 
   validation {
     condition     = length(var.alert_emails) > 0
@@ -67,9 +65,11 @@ variable "block_threshold_percent" {
 variable "workload_account_ids" {
   description = "Accounts that get blocked when the limit is reached (Develop and Production). Never the Management account."
   type        = list(string)
+  default     = ["607520121097", "844153410920"]
 }
 
 variable "spend_limit_scp_id" {
-  description = "ID of the SCP that blocks new paid resources. It was created by AWS Budgets, so Terraform only references it."
+  description = "ID of the SCP that blocks new paid resources (BudgetsSpendLimitDenyNewWorkloads). It was created by AWS Budgets, so Terraform only references it."
   type        = string
+  default     = "p-6ac5s83x"
 }

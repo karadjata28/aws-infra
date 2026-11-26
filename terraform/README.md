@@ -22,8 +22,9 @@ real companies separate dev from prod.
 | `environments/<env>/` | DynamoDB table | **Application data** |
 | `environments/<env>/` | IAM role + policy | Lets the app's compute service talk to the app S3 bucket and table |
 
-`<env>` is `dev` or `prod`. Both use the **same code** with different values in
-`terraform.tfvars`. People don't get IAM users: they sign in through SSO (see
+`<env>` is `dev` or `prod`. Both use the same code; only the values (the `default`s in
+each folder's `variables.tf`) are different. There are no `.tfvars` files.
+People don't get IAM users: they sign in through SSO (see
 [docs/iam.md](docs/iam.md)).
 
 ## Folder layout
@@ -45,7 +46,9 @@ terraform/
 - Every provider has `allowed_account_ids`: if your profile is logged into the wrong
   account, Terraform stops before it changes anything.
 - Each account has its own state bucket, so a mistake in dev can't touch prod's state.
-- Real account IDs and emails live only in `*.tfvars` and `backend.hcl`, which are git-ignored.
+- All values are in `variables.tf`, so they are **in git**. The repo is public, so anyone
+  can see the account IDs and the budget emails. Account IDs aren't secrets, but never put
+  passwords or access keys in `variables.tf`.
 
 ## Why a separate bootstrap stack?
 
@@ -63,7 +66,7 @@ Prerequisites: the Terraform version in [`../.terraform-version`](../.terraform-
 # 1. State bucket in each account (see bootstrap/README.md)
 cd bootstrap
 terraform init
-terraform workspace new develop && terraform apply -var-file=develop.tfvars
+terraform workspace new develop && terraform apply   # the workspace picks the account
 # ...same for management and production
 
 # 2. Management settings (imports the existing budget, creates nothing)

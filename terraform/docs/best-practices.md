@@ -27,7 +27,7 @@
 | `default_tags` | `providers.tf` | Every resource is tagged with no extra effort |
 | `aws_iam_policy_document` instead of raw JSON | `iam_policies.tf`, `iam.tf` | Validated by Terraform, and easier to read |
 | `plan -out` then `apply <plan>` | READMEs | You apply exactly what you reviewed |
-| Real IDs and emails only in git-ignored files | `*.tfvars`, `backend.hcl` | Nothing personal ends up in git |
+| All values as `default`s in `variables.tf`, no `.tfvars` | `variables.tf` | One place to read and change values (trade-off: they are in the public repo) |
 
 ## AWS security
 

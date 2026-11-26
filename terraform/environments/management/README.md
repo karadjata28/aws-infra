@@ -27,8 +27,7 @@ Run `../../bootstrap` for the Management account first.
 ```bash
 aws login --profile management
 
-cp terraform.tfvars.example terraform.tfvars   # real emails and account IDs
-cp backend.hcl.example backend.hcl
+cp backend.hcl.example backend.hcl   # emails and account IDs are the defaults in variables.tf
 
 terraform init -backend-config=backend.hcl
 terraform plan -out=tfplan

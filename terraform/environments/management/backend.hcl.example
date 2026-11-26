@@ -1,6 +1,4 @@
-# Copy to backend.hcl (git-ignored) and fill in the values.
-# Easiest way to get them:  cd ../../bootstrap && terraform workspace select management && terraform output -raw backend_hcl
-bucket       = "training-tfstate-123456789012" # <- the MANAGEMENT account ID
+bucket       = "training-tfstate-123456789012"
 region       = "eu-central-1"
 profile      = "management"
 use_lockfile = true

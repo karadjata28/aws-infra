@@ -24,8 +24,7 @@ There are no IAM users here: people sign in through SSO. See [../../docs/iam.md]
 Run `../../bootstrap` for the Develop account first.
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars   # fill in the Develop account ID
-cp backend.hcl.example backend.hcl             # or: (cd ../../bootstrap && terraform workspace select develop && terraform output -raw backend_hcl) > backend.hcl
+cp backend.hcl.example backend.hcl   # or: (cd ../../bootstrap && terraform workspace select develop && terraform output -raw backend_hcl) > backend.hcl
 
 terraform init -backend-config=backend.hcl
 terraform fmt -check    # formatting
@@ -34,15 +33,16 @@ terraform plan -out=tfplan
 terraform apply tfplan  # applies exactly what you reviewed
 ```
 
-`aws_account_id` in `terraform.tfvars` is a safety net: if the profile is logged into any
-other account, Terraform stops before it changes anything.
+All values are the `default`s in `variables.tf` (there is no `terraform.tfvars`).
+`aws_account_id` is a safety net: if the profile is logged into any other account,
+Terraform stops before it changes anything.
 
 ## Other environments
 
-`../prod` has the same `.tf` code with different values, in the Production account. See
-[../prod/README.md](../prod/README.md).
+`../prod` has the same `.tf` code in the Production account. Only `variables.tf` (the
+values) and `backend.tf` (the state key) differ. See [../prod/README.md](../prod/README.md).
 
 ## Destroy
 
-1. Set `deletion_protection = false` in `terraform.tfvars` and run `terraform apply`.
+1. Set the `deletion_protection` default to `false` in `variables.tf` and run `terraform apply`.
 2. Run `terraform destroy`.

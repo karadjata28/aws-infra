@@ -1,18 +1,18 @@
-# Input variables: values you can change without editing the code.
-# Each account has its own values file (see the *.tfvars.example files).
-
-variable "aws_profile" {
-  description = "AWS CLI profile used to log into the target account (see ~/.aws/config)."
-  type        = string
-}
-
-variable "aws_account_id" {
-  description = "ID of the account this bucket belongs to. Terraform stops if the profile is logged into a different account."
-  type        = string
+variable "accounts" {
+  description = "One entry per AWS account. The key is the workspace name."
+  type = map(object({
+    profile    = string
+    account_id = string
+  }))
+  default = {
+    management = { profile = "management", account_id = "060502546384" }
+    develop    = { profile = "default", account_id = "607520121097" }
+    production = { profile = "production", account_id = "844153410920" }
+  }
 
   validation {
-    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
-    error_message = "aws_account_id must be exactly 12 digits."
+    condition     = alltrue([for a in values(var.accounts) : can(regex("^[0-9]{12}$", a.account_id))])
+    error_message = "Every account_id must be exactly 12 digits."
   }
 }
 
@@ -27,8 +27,6 @@ variable "project" {
   type        = string
   default     = "training"
 
-  # Validation catches bad input at plan time instead of failing in AWS.
-  # S3 bucket names only allow lowercase letters, numbers and hyphens.
   validation {
     condition     = can(regex("^[a-z0-9-]{3,20}$", var.project))
     error_message = "project must be 3-20 characters: lowercase letters, numbers and hyphens only."
@@ -39,4 +37,8 @@ variable "state_version_retention_days" {
   description = "How many days to keep OLD versions of the state file (for rollback)."
   type        = number
   default     = 90
+}
+
+locals {
+  account = var.accounts[terraform.workspace]
 }

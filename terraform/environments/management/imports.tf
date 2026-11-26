@@ -1,13 +1,3 @@
-# -----------------------------------------------------------------------------
-# These resources were created by hand (AWS CLI) before this code existed.
-# `import` blocks tell Terraform "this already exists, take it over instead of
-# creating a new one". The first `terraform plan` should show "4 to import, 0 to add,
-# 3 to change, 0 to destroy", where the 3 changes only add the default tags.
-#
-# After the first successful `terraform apply`, the resources are in the state and
-# this file can be deleted (keeping it is harmless).
-# -----------------------------------------------------------------------------
-
 import {
   to = aws_iam_role.budgets_action
   id = "BudgetsSpendLimitActionRole"

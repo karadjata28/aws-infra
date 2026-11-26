@@ -18,31 +18,31 @@ after 90 days. Locking uses S3 itself (`use_lockfile = true`), so there is no Dy
 |------|--------------|
 | `versions.tf` | Terraform and provider version pins |
 | `providers.tf` | AWS provider, profile, account guard and default tags |
-| `variables.tf` | Inputs (profile, account ID, region, project name, ...) |
+| `variables.tf` | Inputs and their values: the `accounts` map (profile + ID per account), region, project name, ... |
 | `main.tf` | The S3 bucket module |
 | `outputs.tf` | Bucket name and ARN, plus a ready-made `backend.hcl` |
-| `terraform.tfvars.example` | Template for the per-account values files |
 
 ## Usage (once per account)
 
-One folder serves three accounts. A **workspace** keeps a separate local state file for
-each one (`terraform.tfstate.d/<workspace>/`), and a values file says which account to use.
+One folder serves three accounts. The **workspace name** picks the account from the
+`accounts` map in `variables.tf`, and keeps a separate local state file for each one
+(`terraform.tfstate.d/<workspace>/`).
 
 ```bash
 terraform init
 
 # Repeat for management, develop and production:
-cp terraform.tfvars.example develop.tfvars        # then fill in profile + account ID
-terraform workspace new develop                    # or: terraform workspace select develop
-terraform plan  -var-file=develop.tfvars
-terraform apply -var-file=develop.tfvars
+terraform workspace new develop      # or: terraform workspace select develop
+terraform plan
+terraform apply
 
 # Print the backend config for environments/dev:
 terraform output -raw backend_hcl
 ```
 
-If the profile is logged into a different account than `aws_account_id`, Terraform stops
-with an error before it changes anything.
+If the profile is logged into a different account than the one in `accounts`, Terraform
+stops with an error before it changes anything. In the `default` workspace it stops too
+("The given key does not identify an element"): select one of the three workspaces first.
 
 ## About local state
 
@@ -55,4 +55,4 @@ exist until this stack creates it. The folder is git-ignored.
 
 Only do this after every environment in that account has been destroyed.
 1. Empty the bucket, including all object versions (in the S3 console, choose **Empty**).
-2. Run `terraform destroy -var-file=<account>.tfvars` in that account's workspace.
+2. Run `terraform destroy` in that account's workspace.

@@ -1,8 +1,3 @@
-# -----------------------------------------------------------------------------
-# Role that AWS Budgets assumes to run the "block new resources" action.
-# It may only attach/detach SCPs, nothing else.
-# -----------------------------------------------------------------------------
-
 data "aws_iam_policy_document" "budgets_trust" {
   statement {
     actions = ["sts:AssumeRole"]
